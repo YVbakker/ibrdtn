@@ -136,7 +136,6 @@ ANDROID_AC_BUILD([
 	AC_TYPE_UINT8_T
 
 	# Checks for library functions.
-	AC_FUNC_MALLOC
 	AC_FUNC_MKTIME
 	AC_CHECK_FUNCS([gettimeofday sqrt])
 	
@@ -144,7 +143,11 @@ ANDROID_AC_BUILD([
 	has_endian_h=no
 
 	# check POSIX endian.h
-	AC_CHECK_HEADERS([endian.h], [has_endian_h=yes])
+	AC_CHECK_HEADERS([endian.h], [has_endian_h=yes], [],
+	[[#ifdef HAVE_ENDIAN_H
+	#include <endian.h>
+	#endif
+	]])
 
 	# check OSX endian.h
 	AC_CHECK_HEADERS([machine/endian.h], [has_endian_h=yes])

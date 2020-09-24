@@ -64,8 +64,7 @@ namespace dtn
 			 * @param name
 			 * @param data
 			 */
-			void onUpdateBeacon(const ibrcommon::vinterface &iface, DiscoveryBeacon &announcement)
-				throw(NoServiceHereException);
+			void onUpdateBeacon(const ibrcommon::vinterface &iface, DiscoveryBeacon &announcement) noexcept (false);
 
 			/**
 			 * TimeSyncMessage
