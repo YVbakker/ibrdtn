@@ -208,7 +208,8 @@ int main(int argc, char** argv)
 
 					// call the script
 					std::string cmd = _shell + " " + _script + " " + b.source.getString() + " " + file.getPath();
-					::system(cmd.c_str());
+					if(system(cmd.c_str()) != 0) break;
+					//TODO 9-10-20 @yael: catch system() errno, see linux man pages system(3)
 
 					// remove temporary file
 					file.remove();
