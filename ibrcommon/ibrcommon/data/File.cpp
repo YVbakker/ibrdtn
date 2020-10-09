@@ -165,34 +165,35 @@ namespace ibrcommon
 	{
 		if (!isDirectory()) return -1;
 
-		DIR *dp;
-		struct dirent dirp_data;
-		struct dirent *dirp;
-		if((dp = opendir(_path.c_str())) == NULL) {
+		DIR *dir;
+		struct dirent *dp;
+		if((dir = opendir(_path.c_str())) == NULL) {
 			return errno;
 		}
 
 #if __WIN32__
-		while ((dirp = ::readdir(dp)) != NULL)
+		while ((dp = ::readdir(dir)) != NULL)
 #else
-		while (::readdir_r(dp, &dirp_data, &dirp) == 0)
+		while ((dp = readdir(dir)) != NULL)
 #endif
 		{
-			if (dirp == NULL) break;
+			// if (dirp == NULL) break;
 
 			// TODO: check if the name is always limited by a zero
 			// std::string name = std::string(dirp->d_name, dirp->d_reclen);
+			// @yael 9-10-2020 struct dirent is taken from glibc headers and defines d_name as a null terminated filename. 
+			// Therefore this check is not necessary.
 
-			std::string name = std::string(dirp->d_name);
+			std::string name = std::string(dp->d_name);
 			std::stringstream ss; ss << getPath() << FILE_DELIMITER_CHAR << name;
 #if __WIN32__
 			File file(ss.str());
 #else
-			File file(ss.str(), dirp->d_type);
+			File file(ss.str(), dp->d_type);
 #endif
 			files.push_back(file);
 		}
-		closedir(dp);
+		closedir(dir);
 
 		return 0;
 	}
