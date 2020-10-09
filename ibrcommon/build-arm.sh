@@ -1,6 +1,6 @@
-crossroot="/home/yael/x-tools/arm-unknown-linux-gnueabi"
-sysroot="${crossroot}/arm-unknown-linux-gnueabi/sysroot"
-crosspath="${crossroot}/bin/arm-unknown-linux-gnueabi-"
+crossroot="/home/yael/dev/raspi/staging/armv6-rpi-linux-gnueabihf"
+sysroot="${crossroot}/armv6-rpi-linux-gnueabihf/sysroot"
+crosspath="${crossroot}/bin/armv6-rpi-linux-gnueabihf-"
 export CC="${crosspath}gcc --sysroot=${sysroot}"
 export CXX="${crosspath}g++ --sysroot=${sysroot}"
 export AR="${crosspath}ar"
@@ -12,6 +12,6 @@ export RANLIB="${crosspath}ranlib"
 export PKG_CONFIG_PATH=
 export PKG_CONFIG_LIBDIR="${sysroot}/usr/local/lib/pkgconfig"
 export PKG_CONFIG_SYSROOT_DIR=$sysroot
-./configure --host=arm-linux-gnueabi
+./configure --host=arm-linux-gnueabihf
 make -j7
 make install DESTDIR=$sysroot
