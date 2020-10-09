@@ -195,7 +195,7 @@ namespace ibrcommon
 		{
 		public:
 			SafeLock(SocketState &state, vsocket &sock);
-			virtual ~SafeLock();
+			virtual ~SafeLock() noexcept(false);
 		private:
 			SocketState &_state;
 		};
@@ -204,7 +204,7 @@ namespace ibrcommon
 		{
 		public:
 			SelectGuard(SocketState &state, int &counter, ibrcommon::vsocket &sock);
-			virtual ~SelectGuard();
+			virtual ~SelectGuard() noexcept(false);
 		private:
 			SocketState &_state;
 			int &_counter;

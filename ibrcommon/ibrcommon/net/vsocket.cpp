@@ -491,7 +491,7 @@ namespace ibrcommon
 		}
 	}
 
-	vsocket::SafeLock::~SafeLock()
+	vsocket::SafeLock::~SafeLock() noexcept(false)
 	{
 		// release safe-state
 		ibrcommon::MutexLock l(_state);
@@ -523,7 +523,7 @@ namespace ibrcommon
 		}
 	}
 
-	vsocket::SelectGuard::~SelectGuard()
+	vsocket::SelectGuard::~SelectGuard() noexcept(false)
 	{
 		// set the current state to SELECT
 		try {
