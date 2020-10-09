@@ -93,7 +93,7 @@ namespace io
 
 		a = archive_read_new();
 		archive_read_support_filter_all(a);
-		archive_read_support_compression_all(a);
+		// archive_read_support_compression_all(a);	NOTE 9-10-20 @yael: deprecated and unecessary when archive_read_support_filter_all is already called
 		archive_read_support_format_tar(a);
 
 		archive_read_open(a, (void*) &input, &__tar_utils_open_callback, &__tar_utils_read_callback, &__tar_utils_close_callback);
