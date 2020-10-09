@@ -643,7 +643,7 @@ namespace dtn
 			obj.appdatalength = pb.appdatalength;
 			obj.custodian = pb.custodian;
 			obj.destination = pb.destination;
-			obj.expiretime = dtn::utils::Clock::getExpireTime(pb.timestamp, pb.lifetime);
+			obj.expiretime = dtn::utils::Clock::getExpireTime(dynamic_cast<dtn::data::Bundle&>(pb));
 			obj.hopcount = 0;
 			obj.lifetime = pb.lifetime;
 			obj.fragmentoffset = pb.fragmentoffset;
