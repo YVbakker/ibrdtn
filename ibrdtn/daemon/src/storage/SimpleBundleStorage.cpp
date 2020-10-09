@@ -421,7 +421,7 @@ namespace dtn
 			const dtn::data::MetaBundle meta = dtn::data::MetaBundle::create(bundle);
 
 			// create a new container and hash
-			std::auto_ptr<BundleContainer> bc(new BundleContainer(bundle));
+			std::unique_ptr<BundleContainer> bc(new BundleContainer(bundle));
 			DataStorage::Hash hash(*bc);
 
 			// enter critical section - lock pending bundles

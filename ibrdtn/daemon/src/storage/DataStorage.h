@@ -146,7 +146,7 @@ namespace dtn
 				virtual ~StoreDataTask();
 
 				const Hash hash;
-				std::auto_ptr<Container> _container;
+				std::unique_ptr<Container> _container;
 			};
 
 			class RemoveDataTask : public Task

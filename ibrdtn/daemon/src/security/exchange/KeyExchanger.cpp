@@ -118,7 +118,7 @@ namespace dtn
 				while (true)
 				{
 					Task *t = _queue.poll();
-					std::auto_ptr<Task> killer(t);
+					std::unique_ptr<Task> killer(t);
 
 					// execute the task
 					t->execute(*this);

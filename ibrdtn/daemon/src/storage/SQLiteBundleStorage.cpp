@@ -179,7 +179,7 @@ namespace dtn
 					} catch (const std::bad_cast&) { };
 
 					try {
-						std::auto_ptr<Task> killer(t);
+						std::unique_ptr<Task> killer(t);
 						t->run(*this);
 					} catch (const std::exception&) { };
 				}

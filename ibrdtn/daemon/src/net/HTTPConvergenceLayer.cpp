@@ -360,7 +360,7 @@ namespace dtn
 						_push_iob = new ibrcommon::iobuffer();
 					}
 
-					std::auto_ptr<ibrcommon::iobuffer> auto_kill(_push_iob);
+					std::unique_ptr<ibrcommon::iobuffer> auto_kill(_push_iob);
 					std::ostream os(_push_iob);
 					DownloadThread receiver(*_push_iob);
 
