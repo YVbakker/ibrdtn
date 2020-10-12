@@ -489,7 +489,7 @@ namespace dtn
 					} catch (const std::bad_cast&) { };
 
 					try {
-						dynamic_cast<Shutdown&>(*action);
+						const Shutdown &act = dynamic_cast<Shutdown&>(*action);
 
 						// shutdown all connections
 						for(connection_list::const_iterator i = _connections.begin(); i != _connections.end(); ++i)
