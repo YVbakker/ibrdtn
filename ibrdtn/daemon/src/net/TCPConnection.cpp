@@ -569,6 +569,10 @@ namespace dtn
 
 							case BundleFilter::DROP:
 								break;
+							case BundleFilter::PASS:
+								break;
+							case BundleFilter::SKIP:
+								break;
 						}
 					}
 					catch (const dtn::data::Validator::RejectedException &ex)
@@ -699,6 +703,10 @@ namespace dtn
 							case BundleFilter::DROP:
 								transfer.abort(dtn::net::TransferAbortedEvent::REASON_REFUSED_BY_FILTER);
 								continue;
+							case BundleFilter::PASS:
+								break;
+							case BundleFilter::SKIP:
+								break;
 						}
 
 						// send bundle
