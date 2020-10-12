@@ -58,6 +58,7 @@ dnl Checks for programs.
 dnl -----------------------------------------------
 
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_17
 AC_PROG_CC
 
 AC_PROG_INSTALL
