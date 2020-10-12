@@ -112,6 +112,10 @@ namespace dtn
 
 							case BundleFilter::DROP:
 								break;
+							case BundleFilter::PASS:
+								break;
+							case BundleFilter::SKIP:
+								break;
 						}
 					} catch (const dtn::data::Validator::RejectedException &ex) {
 						IBRCOMMON_LOGGER_DEBUG_TAG(DatagramConnection::TAG, 25) << "Bundle rejected: " << ex.what() << IBRCOMMON_LOGGER_ENDL;
