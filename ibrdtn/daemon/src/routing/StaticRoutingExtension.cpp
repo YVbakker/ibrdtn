@@ -358,7 +358,7 @@ namespace dtn
 					} catch (const bad_cast&) { };
 
 					try {
-						ClearRoutesTask &task = dynamic_cast<ClearRoutesTask&>(*t);
+						const ClearRoutesTask &task = dynamic_cast<ClearRoutesTask&>(*t);
 
 						// delete all static routes
 						for (std::list<StaticRoute*>::iterator iter = _routes.begin();
