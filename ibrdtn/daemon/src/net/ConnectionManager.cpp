@@ -166,7 +166,7 @@ namespace dtn
 		void ConnectionManager::add(const dtn::core::Node &n) noexcept
 		{
 			// If node contains MCL
-			if(n.has(Node::CONN_EMAIL) && !n.getEID().getScheme().compare("mail") == 0)
+			if(n.has(Node::CONN_EMAIL) && !(n.getEID().getScheme().compare("mail") == 0))
 			{
 				dtn::core::Node node = n;
 
