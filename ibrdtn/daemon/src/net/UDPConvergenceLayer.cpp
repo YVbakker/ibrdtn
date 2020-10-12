@@ -213,14 +213,15 @@ namespace dtn
 				case BundleFilter::ACCEPT:
 					break;
 				case BundleFilter::REJECT:
-				case BundleFilter::DROP:
-					dtn::net::BundleTransfer local_job = job;
-					local_job.abort(dtn::net::TransferAbortedEvent::REASON_REFUSED_BY_FILTER);
-					return;
+					break;
 				case BundleFilter::PASS:
 					break;
 				case BundleFilter::SKIP:
 					break;
+				case BundleFilter::DROP:
+					dtn::net::BundleTransfer local_job = job;
+					local_job.abort(dtn::net::TransferAbortedEvent::REASON_REFUSED_BY_FILTER);
+					return;
 				}
 
 				// build the dictionary for EID lookup
