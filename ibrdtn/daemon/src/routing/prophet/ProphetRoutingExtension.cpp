@@ -562,7 +562,7 @@ namespace dtn
 						 * a new dp_map exchange for every connected node
 						 */
 						try {
-							dynamic_cast<NextExchangeTask&>(*t);
+							const NextExchangeTask &task = dynamic_cast<NextExchangeTask&>(*t);
 
 							std::set<dtn::core::Node> neighbors = dtn::core::BundleCore::getInstance().getConnectionManager().getNeighbors();
 							std::set<dtn::core::Node>::const_iterator it;
