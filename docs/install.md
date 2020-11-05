@@ -1,0 +1,1 @@
+libtool: warning: remember to run 'libtool --finish /usr/local/lib'
