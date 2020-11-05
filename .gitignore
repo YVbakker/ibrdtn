@@ -3,3 +3,4 @@ compile
 test-driver
 config.h.in~
 .dirstamp
+.vscode/settings.json
