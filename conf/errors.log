@@ -1,1 +1,2 @@
 Thu Nov  5 11:50:28 2020 ERROR IPNDAgent: Join failed on enx503eaa26c8a2 ([fe80::a1b8:dd59:7b3d:5b95%enx503eaa26c8a2]:4551 (link), family: 10); failed to getaddrinfo with address: [fe80::a1b8:dd59:7b3d:5b95%enx503eaa26c8a2]:4551 (link)
+Thu Nov  5 11:55:31 2020 ERROR IPNDAgent: Join failed on enp0s25 ([fe80::861e:2a9b:454a:70d2%enp0s25]:4551 (link), family: 10); failed to getaddrinfo with address: [fe80::861e:2a9b:454a:70d2%enp0s25]:4551 (link)
