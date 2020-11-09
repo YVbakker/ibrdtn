@@ -38,11 +38,11 @@ namespace ibrcommon
 	void HMacStream::update(char *buf, const size_t size)
 	{
 		// hashing
-		HMAC_Update(&ctx_, (unsigned char*)buf, size);
+		HMAC_Update(ctx_, (unsigned char*)buf, size);
 	}
 
 	void HMacStream::finalize(char * hash, unsigned int &size)
 	{
-		HMAC_Final(&ctx_, (unsigned char*)hash, &size);
+		HMAC_Final(ctx_, (unsigned char*)hash, &size);
 	}
 }
