@@ -268,7 +268,7 @@ namespace ibrcommon
 
 
 		/* create ssl context and throw exception if it fails */
-		_ssl_ctx = SSL_CTX_new(TLSv1_method());
+		_ssl_ctx = SSL_CTX_new(TLS_method());
 		if(!_ssl_ctx){
 			char err_buf[ERR_BUF_SIZE];
 			ERR_error_string_n(ERR_get_error(), err_buf, ERR_BUF_SIZE);
