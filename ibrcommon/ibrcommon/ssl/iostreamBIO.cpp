@@ -68,7 +68,7 @@ iostreamBIO::iostreamBIO(iostream *stream)
 	}
 
 	/* save the iostream in the bio object */
-	_bio->ptr = stream;
+	BIO_set_data(_bio, stream);
 }
 
 BIO * iostreamBIO::getBIO(){
@@ -77,10 +77,10 @@ BIO * iostreamBIO::getBIO(){
 
 static int create(BIO *bio)
 {
-	bio->ptr = NULL;
+	BIO_set_data(bio, NULL);
 	/* (from openssl memory bio) */
-	bio->shutdown=1;
-	bio->init=1;
+	BIO_set_shutdown(bio, 1);
+	BIO_set_init(bio, 1);
 	/* from bss_mem.c (openssl):
 	 * bio->num is used to hold the value to return on 'empty', if it is
 	 * 0, should_retry is not set
@@ -88,7 +88,7 @@ static int create(BIO *bio)
 	 * => -1 means the caller can retry, 0: retry is useless
 	 * it is set to 0 since the underlying stream is blocking
 	 */
-	bio->num= 0;
+	// bio->num= 0;
 
 	return 1;
 }
@@ -98,7 +98,7 @@ static int create(BIO *bio)
 static long ctrl(BIO *bio, int cmd, long  num, void *)
 {
 	long ret;
-	iostream *stream = reinterpret_cast<iostream*>(bio->ptr);
+	iostream *stream = reinterpret_cast<iostream*>(BIO_get_data(bio));
 
 	IBRCOMMON_LOGGER_DEBUG_TAG("iostreamBIO", 90) << "ctrl called, cmd: " << cmd << ", num: " << num << "." << IBRCOMMON_LOGGER_ENDL;
 
@@ -143,8 +143,9 @@ static long ctrl(BIO *bio, int cmd, long  num, void *)
 
 static int bread(BIO *bio, char *buf, int len)
 {
-	iostream *stream = reinterpret_cast<iostream*>(bio->ptr);
-	int num_bytes = bio->num;
+	iostream *stream = reinterpret_cast<iostream*>(BIO_get_data(bio));
+	
+	int32_t num_bytes = (int32_t) BIO_get_mem_data(bio,buf);
 
 	try{
 		/* make sure to read at least 1 byte and then read as much as we can */
@@ -166,7 +167,7 @@ static int bwrite(BIO *bio, const char *buf, int len)
 	if(len == 0){
 		return 0;
 	}
-	iostream *stream = reinterpret_cast<iostream*>(bio->ptr);
+	iostream *stream = reinterpret_cast<iostream*>(BIO_get_data(bio));
 
 	/* write the data */
 	try{
