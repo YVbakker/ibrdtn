@@ -42,26 +42,22 @@ static int create(BIO *bio);
 //static int destroy(BIO *bio);
 //static long (*callback_ctrl)(BIO *, int, bio_info_cb *);
 
-
-static BIO_METHOD iostream_method =
-{
-		iostreamBIO::type,
-		iostreamBIO::name,
-		bwrite,
-		bread,
-		NULL,//bputs
-		NULL,//bgets
-		ctrl,
-		create,
-		NULL,//destroy,
-		NULL//callback_ctrl
-};
-
 iostreamBIO::iostreamBIO(iostream *stream)
 	:	_stream(stream)
 {
+	/* create BIO METHOD */
+	static BIO_METHOD *iostream_method = BIO_meth_new(iostreamBIO::type, iostreamBIO::name);
+	BIO_meth_set_write(iostream_method, bwrite);
+	BIO_meth_set_read(iostream_method, bread);
+	BIO_meth_set_puts(iostream_method, NULL);
+	BIO_meth_set_gets(iostream_method, NULL);
+	BIO_meth_set_ctrl(iostream_method, ctrl);
+	BIO_meth_set_create(iostream_method, create);
+	BIO_meth_set_destroy(iostream_method, NULL);
+	BIO_meth_set_callback_ctrl(iostream_method, NULL);
+
 	/* create BIO */
-	_bio = BIO_new(&iostream_method);
+	_bio = BIO_new(iostream_method);
 	if(!_bio){
 		/* creation failed, throw exception */
 		char err_buf[ERR_BUF_SIZE];
