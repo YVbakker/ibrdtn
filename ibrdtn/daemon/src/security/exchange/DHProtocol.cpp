@@ -40,17 +40,18 @@ namespace dtn
 		const std::string DHProtocol::TAG = "DHProtocol";
 
 		DHProtocol::DHState::DHState()
-		 : dh(NULL)
+			: dh(NULL)
 		{
 		}
 
 		DHProtocol::DHState::~DHState()
 		{
-			if (dh) DH_free(dh);
+			if (dh)
+				DH_free(dh);
 		}
 
 		DHProtocol::DHProtocol(KeyExchangeManager &manager)
-		 : KeyExchangeProtocol(manager, 1), _dh_params(NULL), _auto_generate_params(false)
+			: KeyExchangeProtocol(manager, 1), _dh_params(NULL), _auto_generate_params(false)
 		{
 			// check if auto generation of parameters is enabled
 			_auto_generate_params = dtn::daemon::Configuration::getInstance().getSecurity().isGenerateDHParamsEnabled();
@@ -58,13 +59,15 @@ namespace dtn
 
 		DHProtocol::~DHProtocol()
 		{
-			if (_dh_params) DH_free(_dh_params);
+			if (_dh_params)
+				DH_free(_dh_params);
 		}
 
 		void DHProtocol::generate_params()
 		{
 			// if there are already parameters do not generate them again
-			if (_dh_params != NULL) return;
+			if (_dh_params != NULL)
+				return;
 
 			// check if DH params already exist
 			if (_dh_params_file.exists())
@@ -77,7 +80,8 @@ namespace dtn
 					fclose(fd);
 
 					// finish here, if the parameters are loaded from file
-					if (_dh_params != NULL) return;
+					if (_dh_params != NULL)
+						return;
 				}
 			}
 
@@ -117,15 +121,18 @@ namespace dtn
 			// set path for DH params
 			_dh_params_file = SecurityKeyManager::getInstance().getFilePath("dh_params", "pem");
 
-			try {
+			try
+			{
 				// generate parameters
 				generate_params();
-			} catch (const ibrcommon::Exception&) {
+			}
+			catch (const ibrcommon::Exception &)
+			{
 				// generation failed
 			}
 		}
 
-		KeyExchangeSession* DHProtocol::createSession(const dtn::data::EID &peer, unsigned int uniqueId)
+		KeyExchangeSession *DHProtocol::createSession(const dtn::data::EID &peer, unsigned int uniqueId)
 		{
 			return new KeyExchangeSession(getProtocol(), peer, uniqueId, new DHState());
 		}
@@ -159,9 +166,9 @@ namespace dtn
 			// prepare request
 			KeyExchangeData request(KeyExchangeData::REQUEST, session);
 
-			write(request, state.dh->pub_key);
-			write(request, state.dh->p);
-			write(request, state.dh->g);
+			write(request, DH_get0_pub_key(state.dh));
+			write(request, DH_get0_p(state.dh));
+			write(request, DH_get0_g(state.dh));
 
 			manager.submit(session, request);
 		}
@@ -173,170 +180,170 @@ namespace dtn
 
 			switch (data.getStep())
 			{
-				case 0:
+			case 0:
+			{
+				if (data.getAction() == KeyExchangeData::REQUEST)
 				{
-					if (data.getAction() == KeyExchangeData::REQUEST)
+					BIGNUM *pub_key = BN_new();
+					read(data, pub_key);
+
+					// create new params
+					state.dh = DH_new();
+
+					// read p and g paramter from message
+					read(data, DH_get0_p(state.dh));
+					read(data, DH_get0_g(state.dh));
+
+					int codes;
+					if (!DH_check(state.dh, &codes))
 					{
-						BIGNUM* pub_key = BN_new();
-						read(data, &pub_key);
-
-						// create new params
-						state.dh = DH_new();
-
-						// read p and g paramter from message
-						read(data, &state.dh->p);
-						read(data, &state.dh->g);
-
-						int codes;
-						if (!DH_check(state.dh, &codes))
-						{
-							throw ibrcommon::Exception("Error while checking DH parameters");
-						}
-
-						IBRCOMMON_LOGGER_DEBUG_TAG(TAG, 25) << "Generate DH keys" << IBRCOMMON_LOGGER_ENDL;
-
-						if (!DH_generate_key(state.dh))
-						{
-							throw ibrcommon::Exception("Error while generating DH key");
-						}
-
-						unsigned char* secret;
-						long int length = sizeof(unsigned char) * (DH_size(state.dh));
-						if (NULL == (secret = (unsigned char*) OPENSSL_malloc(length)))
-						{
-							BN_free(pub_key);
-							throw ibrcommon::Exception("Error while allocating space for secret key");
-						}
-
-						DH_compute_key(secret, pub_key, state.dh);
-
-						state.secret.assign((const char*)secret, length);
-
-						KeyExchangeData response(KeyExchangeData::RESPONSE, session);
-						write(response, state.dh->pub_key);
-
-						manager.submit(session, response);
-
-						BN_free(pub_key);
+						throw ibrcommon::Exception("Error while checking DH parameters");
 					}
-					else
+
+					IBRCOMMON_LOGGER_DEBUG_TAG(TAG, 25) << "Generate DH keys" << IBRCOMMON_LOGGER_ENDL;
+
+					if (!DH_generate_key(state.dh))
 					{
-						BIGNUM* pub_key = BN_new();
-						read(data, &pub_key);
-
-						unsigned char* secret;
-						long int length = sizeof(unsigned char) * (DH_size(state.dh));
-						if(NULL == (secret = (unsigned char*) OPENSSL_malloc(length)))
-						{
-							BN_free(pub_key);
-							throw ibrcommon::Exception("Error while allocating space for secret key");
-						}
-
-						DH_compute_key(secret, pub_key, state.dh);
-						state.secret.assign((char*) secret, length);
-
-						// get local public key
-						const SecurityKey pkey = SecurityKeyManager::getInstance().get(dtn::core::BundleCore::local, SecurityKey::KEY_PUBLIC);
-
-						ibrcommon::HMacStream hstream(secret, (int) length);
-						hstream << pkey.getData() << std::flush;
-
-						KeyExchangeData response(KeyExchangeData::REQUEST, session);
-						response.setStep(1);
-
-						const dtn::data::BundleString hmac(ibrcommon::HashStream::extract(hstream));
-						response << hmac;
-
-						const dtn::data::BundleString publicK(pkey.getData());
-						response << publicK;
-
-						manager.submit(session, response);
-
-						BN_free(pub_key);
+						throw ibrcommon::Exception("Error while generating DH key");
 					}
-					break;
+
+					unsigned char *secret;
+					long int length = sizeof(unsigned char) * (DH_size(state.dh));
+					if (NULL == (secret = (unsigned char *)OPENSSL_malloc(length)))
+					{
+						BN_free(pub_key);
+						throw ibrcommon::Exception("Error while allocating space for secret key");
+					}
+
+					DH_compute_key(secret, pub_key, state.dh);
+
+					state.secret.assign((const char *)secret, length);
+
+					KeyExchangeData response(KeyExchangeData::RESPONSE, session);
+					write(response, DH_get0_pub_key(state.dh));
+
+					manager.submit(session, response);
+
+					BN_free(pub_key);
 				}
-
-				case 1:
+				else
 				{
-					if (data.getAction() == KeyExchangeData::REQUEST)
+					BIGNUM *pub_key = BN_new();
+					read(data, pub_key);
+
+					unsigned char *secret;
+					long int length = sizeof(unsigned char) * (DH_size(state.dh));
+					if (NULL == (secret = (unsigned char *)OPENSSL_malloc(length)))
 					{
-						dtn::data::BundleString hmac;
-						data >> hmac;
-
-						dtn::data::BundleString publicK;
-						data >> publicK;
-
-						ibrcommon::HMacStream hmacstream((const unsigned char*) state.secret.c_str(), (int) state.secret.size());
-						hmacstream << (const std::string&)publicK << std::flush;
-
-						if (hmac != ibrcommon::HMacStream::extract(hmacstream))
-						{
-							throw ibrcommon::Exception("Error while comparing hmac");
-						}
-
-						// write key in tmp file
-						session.putKey(publicK, SecurityKey::KEY_PUBLIC, SecurityKey::LOW);
-
-						// get local public key
-						const SecurityKey pkey = SecurityKeyManager::getInstance().get(dtn::core::BundleCore::local, SecurityKey::KEY_PUBLIC);
-
-						// create a HMAC from public key
-						ibrcommon::HMacStream hstream((const unsigned char*) state.secret.c_str(), (int) state.secret.size());
-						hstream << pkey.getData() << std::flush;
-
-						// bundle erzeugen: EID, hmac/publicKey, response, round 1
-						KeyExchangeData response(KeyExchangeData::RESPONSE, session);
-						response.setStep(1);
-
-						const dtn::data::BundleString local_hmac(ibrcommon::HashStream::extract(hstream));
-						response << local_hmac;
-
-						const dtn::data::BundleString local_publicK(pkey.getData());
-						response << local_publicK;
-
-						// send bundle to peer
-						manager.submit(session, response);
-
-						// finish the key-exchange
-						manager.finish(session);
+						BN_free(pub_key);
+						throw ibrcommon::Exception("Error while allocating space for secret key");
 					}
-					else
-					{
-						dtn::data::BundleString hmac;
-						data >> hmac;
 
-						dtn::data::BundleString publicK;
-						data >> publicK;
+					DH_compute_key(secret, pub_key, state.dh);
+					state.secret.assign((char *)secret, length);
 
-						ibrcommon::HMacStream hstream((unsigned char*) state.secret.c_str(), (int) state.secret.size());
-						hstream << publicK << std::flush;
+					// get local public key
+					const SecurityKey pkey = SecurityKeyManager::getInstance().get(dtn::core::BundleCore::local, SecurityKey::KEY_PUBLIC);
 
-						if (hmac != ibrcommon::HMacStream::extract(hstream))
-						{
-							throw ibrcommon::Exception("Error while comparing hmac");
-						}
+					ibrcommon::HMacStream hstream(secret, (int)length);
+					hstream << pkey.getData() << std::flush;
 
-						// write key in tmp file
-						session.putKey(publicK, SecurityKey::KEY_PUBLIC, SecurityKey::LOW);
+					KeyExchangeData response(KeyExchangeData::REQUEST, session);
+					response.setStep(1);
 
-						// finish the key-exchange
-						manager.finish(session);
-					}
-					break;
+					const dtn::data::BundleString hmac(ibrcommon::HashStream::extract(hstream));
+					response << hmac;
+
+					const dtn::data::BundleString publicK(pkey.getData());
+					response << publicK;
+
+					manager.submit(session, response);
+
+					BN_free(pub_key);
 				}
+				break;
+			}
+
+			case 1:
+			{
+				if (data.getAction() == KeyExchangeData::REQUEST)
+				{
+					dtn::data::BundleString hmac;
+					data >> hmac;
+
+					dtn::data::BundleString publicK;
+					data >> publicK;
+
+					ibrcommon::HMacStream hmacstream((const unsigned char *)state.secret.c_str(), (int)state.secret.size());
+					hmacstream << (const std::string &)publicK << std::flush;
+
+					if (hmac != ibrcommon::HMacStream::extract(hmacstream))
+					{
+						throw ibrcommon::Exception("Error while comparing hmac");
+					}
+
+					// write key in tmp file
+					session.putKey(publicK, SecurityKey::KEY_PUBLIC, SecurityKey::LOW);
+
+					// get local public key
+					const SecurityKey pkey = SecurityKeyManager::getInstance().get(dtn::core::BundleCore::local, SecurityKey::KEY_PUBLIC);
+
+					// create a HMAC from public key
+					ibrcommon::HMacStream hstream((const unsigned char *)state.secret.c_str(), (int)state.secret.size());
+					hstream << pkey.getData() << std::flush;
+
+					// bundle erzeugen: EID, hmac/publicKey, response, round 1
+					KeyExchangeData response(KeyExchangeData::RESPONSE, session);
+					response.setStep(1);
+
+					const dtn::data::BundleString local_hmac(ibrcommon::HashStream::extract(hstream));
+					response << local_hmac;
+
+					const dtn::data::BundleString local_publicK(pkey.getData());
+					response << local_publicK;
+
+					// send bundle to peer
+					manager.submit(session, response);
+
+					// finish the key-exchange
+					manager.finish(session);
+				}
+				else
+				{
+					dtn::data::BundleString hmac;
+					data >> hmac;
+
+					dtn::data::BundleString publicK;
+					data >> publicK;
+
+					ibrcommon::HMacStream hstream((unsigned char *)state.secret.c_str(), (int)state.secret.size());
+					hstream << publicK << std::flush;
+
+					if (hmac != ibrcommon::HMacStream::extract(hstream))
+					{
+						throw ibrcommon::Exception("Error while comparing hmac");
+					}
+
+					// write key in tmp file
+					session.putKey(publicK, SecurityKey::KEY_PUBLIC, SecurityKey::LOW);
+
+					// finish the key-exchange
+					manager.finish(session);
+				}
+				break;
+			}
 			}
 		}
 
-		void DHProtocol::write(std::ostream &stream, const BIGNUM* bn)
+		void DHProtocol::write(std::ostream &stream, const BIGNUM *bn)
 		{
-			unsigned char* buf = new unsigned char[(BN_num_bits(bn) + 1) * sizeof(char)];
-			dtn::data::Number length = BN_bn2bin(bn, (unsigned char*)buf);
+			unsigned char *buf = new unsigned char[(BN_num_bits(bn) + 1) * sizeof(char)];
+			dtn::data::Number length = BN_bn2bin(bn, (unsigned char *)buf);
 
 			if (length > 0)
 			{
 				stream << length;
-				stream.write((char*)buf, length.get<size_t>());
+				stream.write((char *)buf, length.get<size_t>());
 				delete[] buf;
 			}
 			else
@@ -346,17 +353,17 @@ namespace dtn
 			}
 		}
 
-		void DHProtocol::read(std::istream &stream, BIGNUM **bn)
+		void DHProtocol::read(std::istream &stream, const BIGNUM *bn)
 		{
 			dtn::data::Number length;
 			stream >> length;
 
-			unsigned char* buf = new unsigned char[length.get<size_t>()];
-			stream.read((char*)buf, length.get<size_t>());
-			*bn = BN_bin2bn((unsigned char*)buf, (int) length.get<size_t>(), NULL);
+			unsigned char *buf = new unsigned char[length.get<size_t>()];
+			stream.read((char *)buf, length.get<size_t>());
+			bn = BN_bin2bn((unsigned char *)buf, (int)length.get<size_t>(), NULL);
 			delete[] buf;
 
-			if (*bn == NULL)
+			if (bn == NULL)
 			{
 				throw ibrcommon::Exception("Error while parsing string to BIGNUM");
 			}

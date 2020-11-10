@@ -41,7 +41,7 @@ namespace dtn
 			DHProtocol(KeyExchangeManager &manager);
 			virtual ~DHProtocol();
 
-			virtual KeyExchangeSession* createSession(const dtn::data::EID &peer, unsigned int uniqueId);
+			virtual KeyExchangeSession *createSession(const dtn::data::EID &peer, unsigned int uniqueId);
 
 			virtual void initialize();
 
@@ -54,17 +54,17 @@ namespace dtn
 			public:
 				DHState();
 				virtual ~DHState();
-				DH* dh;
+				DH *dh;
 				std::string secret;
 			};
 
-			static void write(std::ostream &stream, const BIGNUM* bn);
-			static void read(std::istream &stream, BIGNUM **bn);
+			static void write(std::ostream &stream, const BIGNUM *bn);
+			static void read(std::istream &stream, const BIGNUM *bn);
 
 			void generate_params();
 
 			ibrcommon::File _dh_params_file;
-			DH* _dh_params;
+			DH *_dh_params;
 			bool _auto_generate_params;
 		};
 	} /* namespace security */
