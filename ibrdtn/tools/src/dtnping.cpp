@@ -29,153 +29,145 @@
 
 #include <iostream>
 #include <stdint.h>
-#include <getopt.h>
 
 #define CREATE_CHUNK_SIZE 2048
 
 class EchoClient : public dtn::api::Client
 {
-public:
-	EchoClient(dtn::api::Client::COMMUNICATION_MODE mode, string app, ibrcommon::socketstream &stream)
-		: dtn::api::Client(app, stream, mode), _stream(stream)
-	{
-		seq = 0;
-	}
-
-	virtual ~EchoClient()
-	{
-	}
-
-	const dtn::data::Bundle waitForReply(const int timeout)
-	{
-		double wait = (timeout * 1000);
-		ibrcommon::TimeMeasurement tm;
-		while (wait > 0)
+	public:
+		EchoClient(dtn::api::Client::COMMUNICATION_MODE mode, std::string app, ibrcommon::socketstream &stream)
+		 : dtn::api::Client(app, stream, mode), _stream(stream)
 		{
-			try
-			{
-				tm.start();
-				dtn::data::Bundle b = this->getBundle((int)(wait / 1000));
-				tm.stop();
-				checkReply(b);
-				return b;
-			}
-			catch (const std::string &errmsg)
-			{
-				std::cerr << errmsg << std::endl;
-			}
-			wait = wait - tm.getMilliseconds();
+			seq=0;
 		}
-		throw ibrcommon::Exception("timeout is set to zero");
-	}
 
-	void echo(EID destination, int size, int lifetime, bool encryption = false, bool sign = false)
-	{
-		lastdestination = destination.getString();
-		seq++;
-
-		// create a bundle
-		dtn::data::Bundle b;
-
-		// set bundle destination
-		b.destination = destination;
-
-		// enable encryption if requested
-		if (encryption)
-			b.set(dtn::data::PrimaryBlock::DTNSEC_REQUEST_ENCRYPT, true);
-
-		// enable signature if requested
-		if (sign)
-			b.set(dtn::data::PrimaryBlock::DTNSEC_REQUEST_SIGN, true);
-
-		// set lifetime
-		b.lifetime = lifetime;
-
-		// create a new blob
-		ibrcommon::BLOB::Reference ref = ibrcommon::BLOB::create();
-
-		// append the blob as payload block to the bundle
-		b.push_back(ref);
-
-		// open the iostream
+		virtual ~EchoClient()
 		{
-			ibrcommon::BLOB::iostream stream = ref.iostream();
+		}
 
-			// Add magic seqno
-			(*stream).write((char *)&seq, 4);
-
-			if (size > 4)
+		const dtn::data::Bundle waitForReply(const int timeout)
+		{
+			double wait=(timeout*1000);
+			ibrcommon::TimeMeasurement tm;
+			while ( wait > 0 )
 			{
-				size -= 4;
-
-				// create testing pattern, chunkwise to ocnserve memory
-				char pattern[CREATE_CHUNK_SIZE];
-				for (size_t i = 0; i < sizeof(pattern); ++i)
-				{
-					pattern[i] = static_cast<char>(static_cast<int>('0') + (i % 10));
+				try {
+					tm.start();
+					dtn::data::Bundle b = this->getBundle((int)(wait/1000));
+					tm.stop();
+					checkReply(b);
+					return b;
+				} catch (const std::string &errmsg) {
+					std::cerr << errmsg << std::endl;
 				}
+				wait = wait - tm.getMilliseconds();
+			}
+			throw ibrcommon::Exception("timeout is set to zero");
+		}
 
-				while (size > CREATE_CHUNK_SIZE)
+		void echo(EID destination, int size, int lifetime, bool encryption = false, bool sign = false)
+		{
+			lastdestination=destination.getString();
+			seq++;
+			
+			// create a bundle
+			dtn::data::Bundle b;
+
+			// set bundle destination
+			b.destination = destination;
+
+			// enable encryption if requested
+			if (encryption) b.set(dtn::data::PrimaryBlock::DTNSEC_REQUEST_ENCRYPT, true);
+
+			// enable signature if requested
+			if (sign) b.set(dtn::data::PrimaryBlock::DTNSEC_REQUEST_SIGN, true);
+
+			// set lifetime
+			b.lifetime = lifetime;
+			
+			// create a new blob
+			ibrcommon::BLOB::Reference ref = ibrcommon::BLOB::create();
+
+			// append the blob as payload block to the bundle
+			b.push_back(ref);
+
+			// open the iostream
+			{
+				ibrcommon::BLOB::iostream stream = ref.iostream();
+
+				// Add magic seqno
+				(*stream).write((char*)&seq, 4);
+
+				if (size > 4)
 				{
-					(*stream).write(pattern, CREATE_CHUNK_SIZE);
-					size -= CREATE_CHUNK_SIZE;
-				}
+					size-=4;
 
-				(*stream).write(pattern, size);
+					// create testing pattern, chunkwise to ocnserve memory
+					char pattern[CREATE_CHUNK_SIZE];
+					for (size_t i = 0; i < sizeof(pattern); ++i)
+					{
+						pattern[i] = static_cast<char>(static_cast<int>('0') + (i % 10));
+					}
+
+					while (size > CREATE_CHUNK_SIZE) {
+						(*stream).write(pattern, CREATE_CHUNK_SIZE);
+						size -= CREATE_CHUNK_SIZE;
+					}
+
+					(*stream).write(pattern, size);
+				}
+			}
+
+			// send the bundle
+			(*this) << b;
+
+			// ... flush out
+			flush();
+			
+		}
+		
+		void checkReply(dtn::data::Bundle &bundle) {
+			size_t reply_seq = 0;
+			ibrcommon::BLOB::Reference blob = bundle.find<dtn::data::PayloadBlock>().getBLOB();
+			blob.iostream()->read((char *)(&reply_seq),4 );
+
+			if (reply_seq != seq) {
+				std::stringstream ss;
+				ss << "sequence number mismatch, awaited " << seq << ", got " << reply_seq;
+				throw ss.str();
+			}
+			if (bundle.source.getString() != lastdestination) {
+				throw std::string("ignoring bundle from source " + bundle.source.getString() + " awaited " + lastdestination);
 			}
 		}
 
-		// send the bundle
-		(*this) << b;
-
-		// ... flush out
-		flush();
-	}
-
-	void checkReply(dtn::data::Bundle &bundle)
-	{
-		size_t reply_seq = 0;
-		ibrcommon::BLOB::Reference blob = bundle.find<dtn::data::PayloadBlock>().getBLOB();
-		blob.iostream()->read((char *)(&reply_seq), 4);
-
-		if (reply_seq != seq)
-		{
-			std::stringstream ss;
-			ss << "sequence number mismatch, awaited " << seq << ", got " << reply_seq;
-			throw ss.str();
-		}
-		if (bundle.source.getString() != lastdestination)
-		{
-			throw std::string("ignoring bundle from source " + bundle.source.getString() + " awaited " + lastdestination);
-		}
-	}
-
-private:
-	ibrcommon::socketstream &_stream;
-	uint32_t seq;
-	string lastdestination;
+	private:
+		ibrcommon::socketstream &_stream;
+		uint32_t seq;
+		std::string lastdestination;
 };
 
+
+	
 void print_help()
 {
-	cout << "-- dtnping (IBR-DTN) --" << endl;
-	cout << "Syntax: dtnping [options] <dst>" << endl;
-	cout << " <dst>            Set the destination eid (e.g. dtn://node/echo)" << endl
-		 << endl;
-	cout << "* optional parameters *" << endl;
-	cout << " -h|--help        Display this text" << endl;
-	cout << " --src <name>     Set the source application name (e.g. echo-client)" << endl;
-	cout << " --nowait         Do not wait for a reply" << endl;
-	cout << " --abortfail      Abort after first packetloss" << endl;
-	cout << " --size           The size of the payload" << endl;
-	cout << " --count <n>      Send X echo in a row" << endl;
-	cout << " --delay <seconds>" << endl;
-	cout << "                  Delay between a received response and the next request" << endl;
-	cout << " --lifetime <seconds>" << endl;
-	cout << "                  Set the lifetime of outgoing bundles; default: 30" << endl;
-	cout << " --encrypt        Request encryption on the bundle layer" << endl;
-	cout << " --sign           Request signature on the bundle layer" << endl;
-	cout << " -U <socket>      Connect to UNIX domain socket API" << endl;
+	std::cout << "-- dtnping (IBR-DTN) --" << std::endl
+			<< "Syntax: dtnping [options] <dst>"  << std::endl
+			<< " <dst>            Set the destination eid (e.g. dtn://node/echo)" << std::endl << std::endl
+			<< "* optional parameters *" << std::endl
+			<< " -h|--help        Display this text" << std::endl
+			<< " --src <name>     Set the source application name (e.g. echo-client)" << std::endl
+			<< " --nowait         Do not wait for a reply" << std::endl
+			<< " --abortfail      Abort after first packetloss" << std::endl
+			<< " --size           The size of the payload" << std::endl
+			<< " --count <n>      Send X echo in a row" << std::endl
+			<< " --delay <seconds>" << std::endl
+			<< "                  Delay between a received response and the next request" << std::endl
+			<< " --lifetime <seconds>" << std::endl
+			<< "                  Set the lifetime of outgoing bundles; default: 30" << std::endl
+			<< " --encrypt        Request encryption on the bundle layer" << std::endl
+			<< " --sign           Request signature on the bundle layer" << std::endl
+			<< " -U <socket>      Connect to UNIX domain socket API" << std::endl;
 }
 
 size_t _received = 0, _transmitted = 0;
@@ -192,15 +184,12 @@ void print_summary()
 	_runtime.stop();
 
 	double loss = 0;
-	if (_transmitted > 0)
-		loss = ((static_cast<double>(_transmitted) - static_cast<double>(_received)) / static_cast<double>(_transmitted)) * 100.0;
+	if (_transmitted > 0) loss = ((static_cast<double>(_transmitted) - static_cast<double>(_received)) / static_cast<double>(_transmitted)) * 100.0;
 
 	double avg_value = 0;
-	if (_received > 0)
-		avg_value = (_avg / static_cast<double>(_received));
+	if (_received > 0) avg_value = ( _avg / static_cast<double>(_received) );
 
-	std::cout << std::endl
-			  << "--- " << _addr.getString() << " echo statistics --- " << std::endl;
+	std::cout << std::endl << "--- " << _addr.getString() << " echo statistics --- " << std::endl;
 	std::cout << _transmitted << " bundles transmitted, " << _received << " received, " << loss << "% bundle loss, time " << _runtime << std::endl;
 	std::cout << "rtt min/avg/max = ";
 	ibrcommon::TimeMeasurement::format(std::cout, _min) << "/";
@@ -215,8 +204,7 @@ void term(int signal)
 		if (!__exit)
 		{
 			ibrcommon::MutexLock l(__pause);
-			if (__client != NULL)
-				__client->abort();
+			if (__client != NULL) __client->abort();
 			__exit = true;
 			__pause.abort();
 		}
@@ -225,21 +213,20 @@ void term(int signal)
 
 int main(int argc, char *argv[])
 {
-	char opt = 0;
 	// catch process signals
 	ibrcommon::SignalHandler sighandler(term);
 	sighandler.handle(SIGINT);
 	sighandler.handle(SIGTERM);
 	sighandler.initialize();
 
-	string ping_destination = "dtn://local/echo";
-	string ping_source = "";
+	std::string ping_destination = "dtn://local/echo";
+	std::string ping_source = "";
 	int ping_size = 64;
 	unsigned int lifetime = 30;
 	bool wait_for_reply = true;
 	bool stop_after_first_fail = false;
 	bool nonstop = true;
-	size_t interval_pause = 1;
+	double interval_pause = 1.0f;
 	size_t count = 0;
 	dtn::api::Client::COMMUNICATION_MODE mode = dtn::api::Client::MODE_BIDIRECTIONAL;
 	ibrcommon::File unixdomain;
@@ -252,105 +239,99 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	const struct option long_options[]{
-		{"help", no_argument, NULL, 'h'},
-		{"encrypt", no_argument, NULL, 'e'},
-		{"sign", no_argument, NULL, 's'},
-		{"nowait", no_argument, NULL, 'n'},
-		{"abortfail", no_argument, NULL, 'a'},
-		{"src", required_argument, NULL, 'r'},
-		{"size", required_argument, NULL, 'i'},
-		{"count", required_argument, NULL, 'c'},
-		{"delay", required_argument, NULL, 'd'},
-		{"lifetime", required_argument, NULL, 'l'}
-	};
-
-	const char *short_options ="hU:";
-	while ((opt = getopt_long(argc, argv, short_options, long_options, NULL)) != -1)
+	for (int i = 1; i < argc; ++i)
 	{
-		switch (opt)
-		{
-		case 'h':
+		std::string arg = argv[i];
+
+		// print help if requested
+		if ((arg == "-h") || (arg == "--help"))
 		{
 			print_help();
 			return 0;
 		}
-		case 'e':
+
+		else if (arg == "--encrypt")
 		{
 			bundle_encryption = true;
-			break;
 		}
-		case 's':
+
+		else if (arg == "--sign")
 		{
 			bundle_signed = true;
-			break;
 		}
-		case 'n':
+
+		else if (arg == "--nowait")
 		{
 			mode = dtn::api::Client::MODE_SENDONLY;
 			wait_for_reply = false;
-			break;
 		}
-		case 'a':
-		{
-			stop_after_first_fail = true;
-			break;
+		
+		else if ( arg == "--abortfail") {
+			stop_after_first_fail=true;
 		}
-		case 'r':
+
+		else if (arg == "--src" && argc > i)
 		{
-			ping_source = optarg;
-			break;
+			ping_source = argv[i + 1];
+			i++;
 		}
-		case 'i':
+
+		else if (arg == "--size" && argc > i)
 		{
-			stringstream str_size;
-			str_size.str(optarg);
+			std::stringstream str_size;
+			str_size.str( argv[i + 1] );
 			str_size >> ping_size;
-			break;
+			i++;
 		}
-		case 'c':
+
+		else if (arg == "--count" && argc > i)
 		{
-			stringstream str_count;
-			str_count.str(optarg);
+			std::stringstream str_count;
+			str_count.str( argv[i + 1] );
 			str_count >> count;
+			i++;
 			nonstop = false;
-			break;
 		}
-		case 'd':
+
+		else if (arg == "--delay" && argc > i)
 		{
-			stringstream str_delay;
-			str_delay.str(optarg);
+			std::stringstream str_delay;
+			str_delay.str( argv[i + 1] );
 			str_delay >> interval_pause;
-			break;
+			i++;
 		}
-		case 'l':
+
+		else if (arg == "--lifetime" && argc > i)
 		{
-			stringstream data;
-			data << optarg;
+			std::stringstream data; data << argv[i + 1];
 			data >> lifetime;
-			break;
+			i++;
 		}
-		case 'U':
+		else if (arg == "-U" && argc > i)
 		{
-			unixdomain = ibrcommon::File(optarg);
-			break;
-		}
-		default:
-		{
-			std::cout << "unknown command" << std::endl;
-			return -1;
-		}
+			if (++i > argc)
+			{
+					std::cout << "argument missing!" << std::endl;
+					return -1;
+			}
+
+			unixdomain = ibrcommon::File(argv[i]);
 		}
 	}
+
 	// the last parameter is always the destination
 	ping_destination = argv[argc - 1];
+
 	// target address
 	_addr = EID(ping_destination);
+
 	ibrcommon::TimeMeasurement tm;
-	try
-	{
+	
+	
+	try {
 		// Create a stream to the server using TCP.
 		ibrcommon::clientsocket *sock = NULL;
+
 		// check if the unixdomain socket exists
 		if (unixdomain.exists())
 		{
@@ -363,37 +344,42 @@ int main(int argc, char *argv[])
 			ibrcommon::vaddress addr("localhost", 4550);
 			sock = new ibrcommon::tcpsocket(addr);
 		}
+
 		ibrcommon::socketstream conn(sock);
-		std::cout << "I got here\n";
+
 		// Initiate a derivated client
 		EchoClient client(mode, ping_source, conn);
+
 		// set the global client pointer
 		{
 			ibrcommon::MutexLock l(__pause);
 			__client = &client;
 		}
+
 		// Connect to the server. Actually, this function initiate the
 		// stream protocol by starting the thread and sending the contact header.
 		client.connect();
+
 		std::cout << "ECHO " << _addr.getString() << " " << ping_size << " bytes of data." << std::endl;
+
 		// measure runtime
 		_runtime.start();
-		try
-		{
+
+		try {
 			for (unsigned int i = 0; (i < count) || nonstop; ++i)
 			{
 				// set sending time
 				tm.start();
+
 				// Call out a ECHO
-				client.echo(_addr, ping_size, lifetime, bundle_encryption, bundle_signed);
+				client.echo( _addr, ping_size, lifetime, bundle_encryption, bundle_signed );
 				_transmitted++;
+			
 				if (wait_for_reply)
 				{
-					try
-					{
-						try
-						{
-							dtn::data::Bundle response = client.waitForReply(2 * lifetime);
+					try {
+						try {
+							dtn::data::Bundle response = client.waitForReply(2*lifetime);
 
 							// print out measurement result
 							tm.stop();
@@ -403,22 +389,18 @@ int main(int argc, char *argv[])
 
 							// check for min/max/avg
 							_avg += tm.getMilliseconds();
-							if ((_min > tm.getMilliseconds()) || _min == 0)
-								_min = static_cast<double>(tm.getMilliseconds());
-							if ((_max < tm.getMilliseconds()) || _max == 0)
-								_max = static_cast<double>(tm.getMilliseconds());
+							if ((_min > tm.getMilliseconds()) || _min == 0) _min = static_cast<double>(tm.getMilliseconds());
+							if ((_max < tm.getMilliseconds()) || _max == 0) _max = static_cast<double>(tm.getMilliseconds());
 
 							{
 								ibrcommon::BLOB::Reference blob = response.find<dtn::data::PayloadBlock>().getBLOB();
-								blob.iostream()->read((char *)(&reply_seq), 4);
+								blob.iostream()->read((char *)(&reply_seq),4 );
 								payload_size = blob.size();
 							}
 
 							std::cout << payload_size << " bytes from " << response.source.getString() << ": seq=" << reply_seq << " ttl=" << response.lifetime.toString() << " time=" << tm << std::endl;
 							_received++;
-						}
-						catch (const dtn::api::ConnectionTimeoutException &e)
-						{
+						} catch (const dtn::api::ConnectionTimeoutException &e) {
 							if (stop_after_first_fail)
 								throw dtn::api::ConnectionTimeoutException();
 
@@ -430,23 +412,17 @@ int main(int argc, char *argv[])
 							ibrcommon::MutexLock l(__pause);
 							__pause.wait(interval_pause * 1000);
 						}
-					}
-					catch (const ibrcommon::Conditional::ConditionalAbortException &e)
-					{
+					} catch (const ibrcommon::Conditional::ConditionalAbortException &e) {
 						if (e.reason == ibrcommon::Conditional::ConditionalAbortException::COND_TIMEOUT)
 						{
 							continue;
 						}
 						// aborted
 						break;
-					}
-					catch (const dtn::api::ConnectionAbortedException &)
-					{
+					} catch (const dtn::api::ConnectionAbortedException&) {
 						// aborted... do a clean shutdown
 						break;
-					}
-					catch (const dtn::api::ConnectionTimeoutException &ex)
-					{
+					} catch (const dtn::api::ConnectionTimeoutException &ex) {
 						if (stop_after_first_fail)
 						{
 							std::cout << "No response, aborting." << std::endl;
@@ -454,29 +430,43 @@ int main(int argc, char *argv[])
 						}
 					}
 				}
+				else{
+					try{
+						// Added this from the (wait_for_reply) part, because you weren't
+						// able to stop the dtnping while using --nowait without
+						// this.
+						if (interval_pause > 0)
+						{
+							ibrcommon::MutexLock l(__pause);
+							__pause.wait(interval_pause);
+						}
+					} catch (const ibrcommon::Conditional::ConditionalAbortException &e) {
+						if (e.reason == ibrcommon::Conditional::ConditionalAbortException::COND_TIMEOUT)
+						{
+							continue;
+						}
+						// aborted
+						break;
+					}
+				}
 			}
-		}
-		catch (const dtn::api::ConnectionException &)
-		{
+		} catch (const dtn::api::ConnectionException&) {
 			std::cerr << "Disconnected." << std::endl;
-		}
-		catch (const ibrcommon::IOException &)
-		{
+		} catch (const ibrcommon::IOException&) {
 			std::cerr << "Error while receiving a bundle." << std::endl;
 		}
+
 		// Shutdown the client connection.
 		client.close();
 		conn.close();
-	}
-	catch (const ibrcommon::socket_exception &)
-	{
+	} catch (const ibrcommon::socket_exception&) {
 		std::cerr << "Can not connect to the daemon. Does it run?" << std::endl;
 		return -1;
-	}
-	catch (const std::exception &)
-	{
+	} catch (const std::exception&) {
 		std::cerr << "unknown error" << std::endl;
 	}
+
 	print_summary();
+
 	return 0;
 }
