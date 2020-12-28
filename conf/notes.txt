@@ -1,0 +1,29 @@
+
+## leave --prefix option out since it defaults to /usr/local
+## figure out system target by running config.guess script on local machine
+#general for cross compiling with crosstool-ng generated toolchain
+./configure CC=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc CXX=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-g++ AR=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-ar --host=x86_64-pc-linux-gnu --build=armv6l-unknown-linux-gnueabihf 
+
+make -j7
+
+make install DESTDIR=/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot
+
+#ibrcommon
+./configure CC="/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc --sysroot=/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot" CXX="/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-g++ --sysroot=/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot" AR=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-ar CPPFLAGS=-I/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot/usr/local/include LDFLAGS=-L/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot/usr/local/lib --host=x86_64-pc-linux-gnu --build=armv6l-unknown-linux-gnueabihf
+
+# ./configure fails
+
+#ibrdtn
+./configure CC=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc CXX=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-g++ AR=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-ar ibrcommon_CFLAGS="-I/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1 -I/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/include" ibrcommon_LIBS="-L/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/lib -lnl-route-3 -lnl-genl-3 -lnl-3 -L/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1/ibrcommon/.libs -librcommon -L/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot/usr/lib -lpthread" --host arm-unknown-linux
+
+
+#ibrdtnd
+./configure CC=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-gcc CXX=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-g++ AR=/home/yael/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi-ar LDFLAGS="-L/home/yael/dev/raspi/ibrdtn/libdaemon-0.14/libdaemon/.libs -L/home/yael/dev/raspi/ibrdtn/openssl-1.1.1g" CPPFLAGS=-I/home/yael/dev/raspi/ibrdtn/libdaemon-0.14 ibrcommon_CFLAGS="-I/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1 -I/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/include" ibrcommon_LIBS="-L/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/lib -lnl-route-3 -lnl-genl-3 -lnl-3 -L/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1/ibrcommon/.libs -librcommon -L/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot/usr/lib -lpthread" ibrdtn_CFLAGS="-I/home/yael/dev/raspi/ibrdtn/ibrdtn-1.0.1 -I/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1 -I/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/include" ibrdtn_LIBS="-L/home/yael/dev/raspi/ibrdtn/ibrdtn-1.0.1/ibrdtn/.libs -librdtn -L/home/yael/dev/raspi/ibrdtn/libnl-3.2.25/lib -lnl-route-3 -lnl-genl-3 -lnl-3 -L/home/yael/dev/raspi/ibrdtn/ibrcommon-1.0.1/ibrcommon/.libs -librcommon -L/home/yael/x-tools/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot/usr/lib -lpthread" --host arm-unknown-linux
+
+
+---
+export PATH=<toolchain installed dir>/bin:$PATH
+CC=arm-unknown-linux-gnueabi-gcc ./configure --prefix=<toolchain installed dir>/arm-unknown-linux-gnueabi/arm-unknown-linux-gnueabi/sysroot
+make
+make install
+
