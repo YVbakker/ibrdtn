@@ -598,18 +598,19 @@ namespace dtn
 		BundleFilter::ACTION BundleCore::filter(BundleFilter::TABLE table, const FilterContext &context, dtn::data::Bundle &bundle) const
 		{
 			ibrcommon::MutexLock l(_filter_mutex);
+			
+			//always accept bundles
+			// switch (table)
+			// {
+			// 	case BundleFilter::INPUT:
+			// 		return _table_input.filter(context, bundle);
 
-			switch (table)
-			{
-				case BundleFilter::INPUT:
-					return _table_input.filter(context, bundle);
+			// 	case BundleFilter::OUTPUT:
+			// 		return _table_output.filter(context, bundle);
 
-				case BundleFilter::OUTPUT:
-					return _table_output.filter(context, bundle);
-
-				case BundleFilter::ROUTING:
-					return _table_routing.filter(context, bundle);
-			}
+			// 	case BundleFilter::ROUTING:
+			// 		return _table_routing.filter(context, bundle);
+			// }
 
 			return BundleFilter::ACCEPT;
 		}

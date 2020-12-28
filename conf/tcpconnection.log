@@ -1,0 +1,7 @@
+Mon Nov 16 16:45:56 2020 WARNING TCPConnection: connection to dtn://dtn-video-pi-2 failed
+Mon Nov 16 16:45:56 2020 DEBUG.10 TCPConnection: run(): std::exception (no address available to connect)
+Mon Nov 16 16:45:56 2020 DEBUG.15 TCPConvergenceLayer: tcp connection removed (dtn://dtn-video-pi-2)
+Mon Nov 16 16:45:56 2020 NOTICE RequeueBundleEvent: Bundle requeued [658856756.1] dtn://yael-dtn/ooBGsfMEpctMdXGA
+Mon Nov 16 16:45:57 2020 DEBUG.2 ConnectionManager: next hop: Node: dtn://dtn-video-pi-2 [ 0#discovered#TCP#ip=10.2.1.3;port=4556;#expire=658856764;  ]
+Mon Nov 16 16:45:57 2020 DEBUG.15 TCPConvergenceLayer: queued bundle to an new tcp connection (dtn://dtn-video-pi-2)
+Mon Nov 16 16:45:57 2020 DEBUG.15 TCPConnection: Initiate TCP connection to 10.2.1.3:4556

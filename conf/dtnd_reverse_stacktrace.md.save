@@ -1,0 +1,11 @@
+Main.cpp
+main()->__daemon_run()->_dtnd::init()
+dtn::daemon::NativeDaemon _dtnd
+NativeDaemon.cpp
+init()->init_up()->init_network()
+initialize()->
+TCPConvergenceLayer.cpp
+componentUp()
+The convergence layer is subscribed to P2P dial-up events
+
+vsocket::up() throws error

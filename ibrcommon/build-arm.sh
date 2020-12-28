@@ -13,5 +13,6 @@ export RANLIB="${crosspath}ranlib"
 #export PKG_CONFIG_LIBDIR="${sysroot}/usr/local/lib/pkgconfig"
 #export PKG_CONFIG_SYSROOT_DIR=$sysroot
 ./configure --host=arm-rpi-linux-gnueabihf
+make clean
 make -j7
 make install DESTDIR=$sysroot

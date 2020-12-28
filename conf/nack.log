@@ -1,0 +1,5 @@
+Fri Nov 27 12:33:24 2020 DEBUG.20 StreamBuffer: NACK received!
+Fri Nov 27 12:33:24 2020 DEBUG.20 StreamConnection: bundle has been refused
+Fri Nov 27 12:33:24 2020 DEBUG.30 StreamBuffer: 0 segments to NACK
+Fri Nov 27 12:33:24 2020 DEBUG.25 StreamBuffer: skip the current transfer
+Fri Nov 27 12:33:25 2020 DEBUG.20 NeighborDatabase: release transfer of [659792004.1] dtn://pi/qHigvWJaoRytlyxF to dtn://laptop (0 bundles in transit)

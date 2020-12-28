@@ -556,7 +556,7 @@ namespace dtn
 						// push bundle through the filter routines
 						context.setBundle(bundle);
 						BundleFilter::ACTION ret = dtn::core::BundleCore::getInstance().filter(dtn::core::BundleFilter::INPUT, context, bundle);
-
+						
 						switch (ret) {
 							case BundleFilter::ACCEPT:
 								// raise default bundle received event

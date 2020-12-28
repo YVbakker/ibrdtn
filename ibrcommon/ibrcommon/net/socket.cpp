@@ -89,8 +89,8 @@ namespace ibrcommon
 #define __errno errno
 #endif
 
-	int basesocket::DEFAULT_SOCKET_FAMILY = AF_INET6;
-	int basesocket::DEFAULT_SOCKET_FAMILY_ALTERNATIVE = AF_INET;
+	int basesocket::DEFAULT_SOCKET_FAMILY = AF_INET;
+	int basesocket::DEFAULT_SOCKET_FAMILY_ALTERNATIVE = AF_INET6;
 
 	void initialize_socket() {
 		__init_sockets();
@@ -740,12 +740,12 @@ namespace ibrcommon
 		try {
 			service = addr.service().c_str();
 		} catch (const vaddress::address_not_set&) { };
-
-		if (0 != ::getaddrinfo(address, service, &hints, &res))
-			throw socket_exception("failed to getaddrinfo with address: " + addr.toString());
-
+		int8_t addrinfo = ::getaddrinfo(address, service, &hints, &res);
+		if (0 != addrinfo)
+			throw socket_exception("failed to getaddrinfo with address: " + addr.toString() + " and error code " + std::to_string(addrinfo));
 		try {
 			basesocket::bind(_fd, res->ai_addr, res->ai_addrlen);
+			std::cout << "!!! " << addr.toString() << std::endl;
 			freeaddrinfo(res);
 		} catch (const socket_exception&) {
 			freeaddrinfo(res);
@@ -852,6 +852,7 @@ namespace ibrcommon
 
 				// connect to the current address using the created socket
 				if (::connect(fd, walk->ai_addr, walk->ai_addrlen) != 0) {
+					//19-11-20 yael skips this clause so that means at this point the status must be EINPROGRESS
 					if (__errno != EINPROGRESS) {
 						// the connect failed, so we close the socket immediately
 						__close(fd);
@@ -906,6 +907,10 @@ namespace ibrcommon
 #ifdef __WIN32__
 					::getsockopt(current->fd(), SOL_SOCKET, SO_ERROR, (char*)&err, &len);
 #else
+					//check getsockopt return value before handling error (if 0 then there's no error)
+					//check if SO_ERROR is still valid property of SOL_SOCKET, err returns 111 (ECONNREFUSED)
+					//
+					// 18nov2020 yael 
 					::getsockopt(current->fd(), SOL_SOCKET, SO_ERROR, &err, &len);
 #endif
 

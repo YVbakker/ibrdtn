@@ -88,8 +88,8 @@ namespace dtn
 		{
 			IBRCOMMON_LOGGER_DEBUG_TAG(TAG, 10) << "Join on " << iface.toString() << " (" << addr.toString() << ", family: " << addr.family() << ")" << IBRCOMMON_LOGGER_ENDL;
 
-			// only join IPv6 and IPv4 addresses
-			if ((addr.family() != AF_INET) && (addr.family() != AF_INET6)) return;
+			// only join IPv4 addresses (for ipv6 check for AF_INET6)
+			if (addr.family() != AF_INET) return;
 
 			// do not join on loopback interfaces
 			if (addr.isLocal()) return;
