@@ -79,7 +79,7 @@ namespace ibrcommon
 		bool _limit;
 
 	public:
-		Queue(unsigned int max = 0) : _sem(max), _limit(max > 0)
+		Queue(unsigned int max = 0) : _sem("queue",max), _limit(max > 0)
 		{};
 
 		virtual ~Queue()
