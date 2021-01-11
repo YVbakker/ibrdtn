@@ -3,3 +3,5 @@ ibrcommon/compile
 ibrdtn/daemon/test-driver
 ibrdtn/daemon/compile
 .vscode/settings.json
+ibrdtn/ibrdtn/compile
+ibrdtn/ibrdtn/test-driver
