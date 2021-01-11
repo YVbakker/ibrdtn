@@ -865,7 +865,10 @@ namespace dtn
 
 			/**
 			 * verify integrity and authentication of incoming bundles
+			 * yael 11jan2021: only do this when security level is higher than SECURITY_LEVEL_NONE
 			 */
+			if(secconf.getLevel())
+			{
 			_table_input.append(
 					(new SecurityFilter(SecurityFilter::VERIFY_AUTH, BundleFilter::SKIP))->append(
 					(new LogFilter(ibrcommon::LogLevel::warning, "bundle rejected due to invalid authentication"))->append(
@@ -877,6 +880,7 @@ namespace dtn
 					(new LogFilter(ibrcommon::LogLevel::warning, "bundle rejected due to invalid signature"))->append(
 					(new RejectFilter())
 			)));
+			}
 		}
 	}
 }
