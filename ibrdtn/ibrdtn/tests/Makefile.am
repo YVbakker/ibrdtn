@@ -1,3 +1,6 @@
+#Automake options
+AUTOMAKE_OPTIONS = subdir-objects
+
 ## Source directory
 
 dist_noinst_DATA = test-key.pem
