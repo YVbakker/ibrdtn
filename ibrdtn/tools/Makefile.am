@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = foreign subdir-objects
 SUBDIRS = src doc man
 ACLOCAL_AMFLAGS = -I m4
 

@@ -1,5 +1,8 @@
 ## top directory
 
+#Automake options
+AUTOMAKE_OPTIONS = subdir-objects
+
 #Build in these directories:
 SUBDIRS = $(GENERIC_LIBRARY_NAME)
 
