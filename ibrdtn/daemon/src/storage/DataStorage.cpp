@@ -87,7 +87,7 @@ namespace dtn
 		{ return *_stream; }
 
 		DataStorage::DataStorage(Callback &callback, const ibrcommon::File &path, unsigned int write_buffer, bool initialize)
-		 : _callback(callback), _path(path), _tasks(), _store_sem(write_buffer), _store_limited(write_buffer > 0), _faulty(false)
+		 : _callback(callback), _path(path), _tasks(), _store_sem("datastorage", write_buffer), _store_limited(write_buffer > 0), _faulty(false)
 		// limit the number of bundles in the write buffer
 		{
 			// initialize the storage
