@@ -30,13 +30,14 @@
 #else
 #include <semaphore.h>
 #endif
+#include <fcntl.h>
 
 namespace ibrcommon
 {
 	class Semaphore : public MutexInterface
 	{
 		public:
-			Semaphore(unsigned int value = 0);
+			Semaphore(std::string name,unsigned int value = 0);
 			virtual ~Semaphore();
 
 			void wait();
@@ -46,7 +47,8 @@ namespace ibrcommon
 			void enter() throw (MutexException);
 			void leave() throw (MutexException);
 		private:
-			sem_t count_sem;
+			sem_t *count_sem;
+			const char *name;
 	};
 }
 #endif /*SEMAPHORE_H_*/

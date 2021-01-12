@@ -37,7 +37,7 @@
 namespace ibrcommon
 {
 	// maximum of concurrent opened files
-	ibrcommon::Semaphore BLOB::_filelimit(10);
+	ibrcommon::Semaphore BLOB::_filelimit("blob", 10);
 
 	// default BLOB provider - memory based; auto deletion enabled
 	ibrcommon::BLOB::ProviderRef BLOB::provider(new ibrcommon::MemoryBLOBProvider(), true);

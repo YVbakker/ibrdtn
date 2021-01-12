@@ -29,7 +29,7 @@ namespace dtn
 	namespace net
 	{
 		// static semaphore to limit the number of received bundles in transit between CL and storage
-		ibrcommon::Semaphore BundleReceivedEvent::_sem(5);
+		ibrcommon::Semaphore BundleReceivedEvent::_sem("BundleReceivedEvent", 5);
 
 		BundleReceivedEvent::BundleReceivedEvent(const dtn::data::EID &p, const dtn::data::Bundle &b, const bool local)
 		 : Event(-1), peer(p), bundle(b), fromlocal(local)

@@ -27,24 +27,31 @@ using namespace std;
 
 namespace ibrcommon
 {
-	Semaphore::Semaphore(unsigned int value)
+	Semaphore::Semaphore(std::string name, unsigned int value) : name(name.c_str())
 	{
-		sem_init(&count_sem, 0, value);
+		errno = 0;
+		count_sem = sem_open(name.c_str(), O_CREAT, 0644, value);
+		if(SEM_FAILED == count_sem)
+		{
+			std::string err(strerror(errno));
+			throw MutexException("error whilst creating semaphore: " + err);
+		}
 	}
 
 	Semaphore::~Semaphore()
 	{
-		sem_destroy(&count_sem);
+		sem_close(count_sem);
+		sem_unlink(name);
 	}
 
 	void Semaphore::wait()
 	{
-		sem_wait(&count_sem);
+		sem_wait(count_sem);
 	}
 
 	void Semaphore::post()
 	{
-		sem_post(&count_sem);
+		sem_post(count_sem);
 	}
 
 	void Semaphore::trylock() throw (MutexException)
